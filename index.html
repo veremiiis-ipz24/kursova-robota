@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Менеджер контактів</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- ─── ЕКРАН ВХОДУ ──────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Система</div>
+    <div class="login-title">Менеджер контактів</div>
+    <div id="login-alert"></div>
+    <div class="form-group">
+      <label>Ім'я користувача</label>
+      <input type="text" id="login-username" placeholder="введіть логін" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label>Пароль</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn btn-primary" id="btn-login">Увійти</button>
+  </div>
+</div>
+
+<!-- ─── ОСНОВНИЙ ДОДАТОК ──────────────────────────────────── -->
+<div id="app" style="display:none;">
+
+  <!-- БІЧНА ПАНЕЛЬ -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">ContactMgr</span>
+      <span class="sidebar-sub">v2.0.0</span>
+    </div>
+    <div class="sidebar-user">
+      Увійшли як <strong id="sidebar-username">—</strong>
+      <span class="role-badge" id="sidebar-role-badge">користувач</span>
+    </div>
+    <nav>
+      <div class="nav-section">Головне</div>
+      <div class="nav-item active" data-page="contacts">
+        <i class="icon">◈</i> Контакти
+      </div>
+      <div class="nav-item" data-page="groups">
+        <i class="icon">⬡</i> Групи
+      </div>
+      <div class="nav-section">Дані</div>
+      <div class="nav-item" data-page="import-export">
+        <i class="icon">⇅</i> Імпорт / Експорт
+      </div>
+      <div class="nav-section admin-only" style="display:none;">Адмін</div>
+      <div class="nav-item admin-only" data-page="users" style="display:none;">
+        <i class="icon">◉</i> Користувачі
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" id="btn-logout">Вийти</button>
+    </div>
+  </aside>
+
+  <!-- ОСНОВНИЙ ВМІСТ -->
+  <main id="main">
+    <div id="topbar">
+      <span class="topbar-title" id="topbar-title">Контакти</span>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div id="content">
+
+      <!-- ─── СТОРІНКА КОНТАКТІВ ──────────────────── -->
+      <div class="page active" id="page-contacts">
+        <div class="stats-row" id="contacts-stats"></div>
+
+        <!-- Bulk action bar (hidden until selection) -->
+        <div class="bulk-bar" id="bulk-bar" style="display:none;">
+          <span id="bulk-count">0 вибрано</span>
+          <div class="bulk-actions">
+            <button class="btn btn-danger btn-sm" id="btn-bulk-delete">Видалити</button>
+            <button class="btn btn-secondary btn-sm" id="btn-bulk-group">До групи…</button>
+            <button class="btn btn-secondary btn-sm" id="btn-bulk-export">Експортувати</button>
+            <button class="btn btn-ghost btn-sm" id="btn-bulk-cancel">Скасувати</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="search-bar">
+            <div class="search-input-wrap">
+              <span class="search-icon">⌕</span>
+              <input type="text" id="contacts-search" placeholder="Пошук за ім'ям, телефоном, email…"/>
+            </div>
+            <select class="filter-select" id="contacts-group-filter">
+              <option value="">Всі групи</option>
+            </select>
+            <select class="filter-select" id="contacts-sort">
+              <option value="last_name">Прізвище ↑</option>
+              <option value="first_name">Ім'я ↑</option>
+              <option value="email">Email ↑</option>
+              <option value="created_at">Дата додавання</option>
+              <option value="favorite">Улюблені спочатку</option>
+            </select>
+            <label class="fav-toggle" title="Показати лише улюблені">
+              <input type="checkbox" id="filter-favorites"/>
+              <span>★ Улюблені</span>
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table id="contacts-table">
+              <thead>
+                <tr>
+                  <th style="width:36px;">
+                    <input type="checkbox" id="select-all" title="Вибрати всі"/>
+                  </th>
+                  <th>★</th>
+                  <th>Ім'я</th>
+                  <th>Телефон</th>
+                  <th>Email</th>
+                  <th>Групи</th>
+                  <th>Додано</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="contacts-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="contacts-empty" style="display:none;">
+            <div class="empty-icon">◈</div>
+            Контактів не знайдено.
+          </div>
+          <!-- Pagination -->
+          <div class="pagination" id="pagination" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- ─── СТОРІНКА ГРУП ────────────────────────── -->
+      <div class="page" id="page-groups">
+        <div class="groups-panel">
+          <div class="groups-list-panel">
+            <div class="groups-list-header">
+              <span class="card-title">Групи</span>
+              <button class="btn btn-primary btn-sm" id="btn-new-group">+ Нова</button>
+            </div>
+            <div id="groups-list-body">
+              <div class="empty" style="padding:20px;">Груп ще немає.</div>
+            </div>
+          </div>
+          <div>
+            <div class="card" id="group-contacts-card">
+              <div class="card-header">
+                <span class="card-title" id="group-contacts-title">Виберіть групу</span>
+                <div id="group-contacts-actions" style="display:flex;gap:6px;"></div>
+              </div>
+              <div id="group-contacts-body">
+                <div class="empty"><div class="empty-icon">⬡</div>Виберіть групу зліва.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── СТОРІНКА ІМПОРТ/ЕКСПОРТ ─────────────── -->
+      <div class="page" id="page-import-export">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Імпорт CSV</span></div>
+            <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
+              Завантажте CSV-файл зі стовпцями: <code style="color:var(--accent)">first_name, last_name, phone, email, note</code>
+            </p>
+            <div class="upload-area" id="upload-area">
+              <div style="font-size:20px;margin-bottom:6px;">↑</div>
+              Натисніть або перетягніть .csv файл сюди
+              <input type="file" id="csv-file-input" accept=".csv" style="display:none;"/>
+            </div>
+            <div id="import-results"></div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" id="btn-import">Імпортувати</button>
+              <button class="btn btn-secondary" id="btn-download-template">Завантажити шаблон</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Експорт CSV</span></div>
+            <p style="font-size:12px;color:var(--text-dim);margin-bottom:20px;">
+              Завантажте всі контакти у форматі CSV (Excel, Google Sheets тощо).
+            </p>
+            <button class="btn btn-primary" id="btn-export">↓ Експортувати контакти</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── СТОРІНКА КОРИСТУВАЧІВ (адмін) ────────── -->
+      <div class="page" id="page-users">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Управління користувачами</span>
+            <button class="btn btn-primary btn-sm" id="btn-new-user">+ Новий користувач</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Логін</th>
+                  <th>Роль</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="users-empty" style="display:none;">Користувачів не знайдено.</div>
+        </div>
+      </div>
+
+    </div><!-- /#content -->
+  </main>
+</div><!-- /#app -->
+
+<!-- ═══════════════════ МОДАЛЬНІ ВІКНА ═══════════════════ -->
+
+<!-- Контакт -->
+<div class="modal-overlay" id="modal-contact">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-contact-title">Новий контакт</span>
+      <button class="modal-close" data-close="modal-contact">✕</button>
+    </div>
+    <!-- Tabs -->
+    <div class="modal-tabs">
+      <button class="modal-tab active" data-tab="tab-info">Інформація</button>
+      <button class="modal-tab" data-tab="tab-history">Історія змін</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-contact-alert"></div>
+
+      <!-- Tab: Info -->
+      <div id="tab-info" class="tab-pane active">
+        <!-- Quick actions (shown when editing) -->
+        <div id="quick-actions" style="display:none;margin-bottom:14px;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Швидкі дії</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <a id="qa-call" class="btn btn-secondary btn-sm" href="#" target="_blank">📞 Подзвонити</a>
+            <a id="qa-email" class="btn btn-secondary btn-sm" href="#" target="_blank">✉ Email</a>
+            <a id="qa-telegram" class="btn btn-secondary btn-sm" href="#" target="_blank" style="display:none;">✈ Telegram</a>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ім'я *</label>
+            <input type="text" id="cf-first_name" placeholder="Іван"/>
+          </div>
+          <div class="form-group">
+            <label>Прізвище *</label>
+            <input type="text" id="cf-last_name" placeholder="Петренко"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Телефон</label>
+            <input type="tel" id="cf-phone" placeholder="+380 XX XXX XX XX"/>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="cf-email" placeholder="ivan@example.com"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Нотатки</label>
+          <textarea id="cf-note" placeholder="Додаткові нотатки…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Додати до груп</label>
+          <div id="cf-groups-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="cf-favorite" style="width:auto;accent-color:var(--accent);"/>
+          <label for="cf-favorite" style="text-transform:none;letter-spacing:0;color:var(--text-dim);font-size:12px;cursor:pointer;">
+            ★ Позначити як улюблений
+          </label>
+        </div>
+      </div>
+
+      <!-- Tab: History -->
+      <div id="tab-history" class="tab-pane" style="display:none;">
+        <div id="history-list">
+          <div class="empty"><div class="empty-icon">◷</div>Збережіть контакт, щоб бачити історію.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-contact">Скасувати</button>
+      <button class="btn btn-primary" id="btn-save-contact">Зберегти контакт</button>
+    </div>
+  </div>
+</div>
+
+<!-- Група -->
+<div class="modal-overlay" id="modal-group">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-group-title">Нова група</span>
+      <button class="modal-close" data-close="modal-group">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-group-alert"></div>
+      <div class="form-group">
+        <label>Назва групи *</label>
+        <input type="text" id="gf-name" placeholder="напр. Робота, Родина, VIP…"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-group">Скасувати</button>
+      <button class="btn btn-primary" id="btn-save-group">Зберегти групу</button>
+    </div>
+  </div>
+</div>
+
+<!-- Користувач -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-user-title">Новий користувач</span>
+      <button class="modal-close" data-close="modal-user">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-user-alert"></div>
+      <div class="form-group">
+        <label>Логін *</label>
+        <input type="text" id="uf-username"/>
+      </div>
+      <div class="form-group">
+        <label>Пароль *</label>
+        <input type="password" id="uf-password" placeholder="мін. 6 символів"/>
+      </div>
+      <div class="form-group">
+        <label>Роль</label>
+        <select id="uf-role">
+          <option value="user">Користувач</option>
+          <option value="admin">Адміністратор</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-user">Скасувати</button>
+      <button class="btn btn-primary" id="btn-save-user">Створити користувача</button>
+    </div>
+  </div>
+</div>
+
+<!-- Зміна пароля -->
+<div class="modal-overlay" id="modal-password">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Змінити пароль</span>
+      <button class="modal-close" data-close="modal-password">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-password-alert"></div>
+      <div class="form-group">
+        <label>Новий пароль *</label>
+        <input type="password" id="pf-password" placeholder="мін. 6 символів"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-password">Скасувати</button>
+      <button class="btn btn-primary" id="btn-save-password">Оновити пароль</button>
+    </div>
+  </div>
+</div>
+
+<!-- Підтвердження -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <span class="modal-title">Підтвердження</span>
+      <button class="modal-close" data-close="modal-confirm">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message" style="font-size:13px;color:var(--text-dim);"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-confirm">Скасувати</button>
+      <button class="btn btn-danger" id="btn-confirm-yes">Видалити</button>
+    </div>
+  </div>
+</div>
+
+<!-- Додати контакт до групи -->
+<div class="modal-overlay" id="modal-assign-group">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <span class="modal-title">Додати до групи</span>
+      <button class="modal-close" data-close="modal-assign-group">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Оберіть групу</label>
+        <select id="assign-group-select"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-assign-group">Скасувати</button>
+      <button class="btn btn-primary" id="btn-do-assign-group">Додати</button>
+    </div>
+  </div>
+</div>
+
+<!-- Масове: додати до групи -->
+<div class="modal-overlay" id="modal-bulk-group">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <span class="modal-title">Додати вибрані до групи</span>
+      <button class="modal-close" data-close="modal-bulk-group">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Оберіть групу</label>
+        <select id="bulk-group-select"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-bulk-group">Скасувати</button>
+      <button class="btn btn-primary" id="btn-do-bulk-group">Додати до групи</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
