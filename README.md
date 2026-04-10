@@ -40,21 +40,13 @@ contact_manager/
 mysql -u root -p < database/schema.sql
 ```
 
-Облікові дані адміністратора за замовчуванням: `admin` / `password` *(потрібно змінити)*
+Облікові дані адміністратора за замовчуванням: `admin` / `admin123` *(потрібно змінити)*
 
 Оновіть `backend/config.php`, вказавши свої параметри підключення до БД.
 
 ### 2. Веб-сервер
 
-Налаштуйте Apache/Nginx так, щоб кореневою директорією був каталог `frontend/`.
-
 PHP-файли з `backend/` повинні бути доступні за шляхом `../backend/api/`.
-
-**Приклад для Apache** (додати у `frontend/.htaccess`):
-
-```apache
-Options -Indexes
-```
 
 ### 3. Python (для імпорту CSV через PHP)
 
