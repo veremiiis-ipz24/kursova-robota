@@ -49,7 +49,7 @@ class ImportExportService {
                 fn($g) => $g->name,
                 $this->groupRepo->getGroupsForContact($c->id)
             );
-            $phone = ($c->phone !== '') ? "\t" . $c->phone : '';
+            $phone = ($c->phone !== '') ? '="' . $c->phone . '"' : '';
             $rows[] = [
                 $c->id,
                 $c->firstName,
@@ -90,7 +90,25 @@ class ImportExportService {
             if (empty(trim($line))) continue;
             $values = str_getcsv($line);
             $row    = array_combine($headers, array_pad($values, count($headers), ''));
-            if (isset($row['phone'])) $row['phone'] = ltrim($row['phone'], "\t");
+            if (isset($row['phone'])) {
+				$phone = trim((string)$row['phone']);
+
+				// убрать формулу Excel: ="3805..."
+				if (preg_match('/^="(.+)"$/', $phone, $m)) {
+					$phone = $m[1];
+				}
+
+				// убрать таб
+				$phone = ltrim($phone, "\t");
+
+				// фикс scientific notation
+				if (preg_match('/e\+/i', $phone)) {
+					$phone = sprintf('%.0f', (float)$phone);
+				}
+
+			$row['phone'] = $phone;
+			}
+			
             try {
                 $this->contactService->createContact($userId, $row);
                 $imported++;
