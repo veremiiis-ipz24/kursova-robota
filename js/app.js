@@ -754,7 +754,8 @@ $('btn-export').addEventListener('click', () => {
 });
 
 $('btn-download-template').addEventListener('click', () => {
-    const csv = '\uFEFFfirst_name,last_name,phone,email,note\nІван,Петренко,+380501234567,ivan@example.com,Клієнт\n';
+    const csv = '\uFEFFfirst_name,last_name,phone,email,note\nІван,Петренко,="+380501234567",ivan@example.com,Клієнт\n';
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
